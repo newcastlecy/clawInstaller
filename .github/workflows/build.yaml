@@ -1,0 +1,37 @@
+name: Build OpenClaw Installer
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  # 允许在 GitHub Actions 页面手动触发构建
+  workflow_dispatch: 
+
+jobs:
+  build:
+    # 因为是 net8.0-windows WinForms 项目，必须使用 Windows 运行器
+    runs-on: windows-latest 
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Publish Single File
+      # 使用 dotnet publish 构建。-c Release 指定发布模式，-o 指定输出目录
+      run: dotnet publish OpenClawInstaller.csproj --self-contained false -c Release -o ./publish_output
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: OpenClawInstaller-win-x64
+        # 提取生成的 exe 文件作为构建产物提供下载
+        path: ./publish_output/OpenClawInstaller.exe
